@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Card, FormFill, Loader } from "../components";
 
 const Home = () => {
@@ -6,10 +6,38 @@ const Home = () => {
   const [allPosts, setallPosts] = useState(null);
   const [searchText, setsearchText] = useState("");
 
+  useEffect(() => {
+    const fetchPosts = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch("http://localhost:8080/api/v1/post", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+        if (response.ok) {
+          const result = await response.json();
+          setallPosts(result.data.reverse());
+        }
+      } catch (error) {
+        alert(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPosts();
+  });
+
   const RenderCard = ({ data, title }) => {
-    if (data?.length > 0) {
+    if (!data) {
+      return null; // or any other fallback UI
+    }
+
+    if (data.length > 0) {
       return data.map((post) => <Card key={post._id} {...post} />);
     }
+
     return (
       <h2 className="mt-5 font-bold text-[#6469ff] text-xl uppercase">
         {title}
