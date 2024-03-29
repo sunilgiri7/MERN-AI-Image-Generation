@@ -1,8 +1,7 @@
 import express from "express";
 import * as dotenv from "dotenv";
 import { v2 as cloudinary } from "cloudinary";
-
-import PostSchema from "../mongodb/models/Post.js";
+import Post from "../mongodb/models/Post.js";
 
 dotenv.config();
 
@@ -18,9 +17,12 @@ cloudinary.config({
 router.route("/").get(async (req, res) => {
   try {
     const posts = await Post.find({});
-    res.status(201).json({ success: true, data: posts });
+    res.status(200).json({ success: true, data: posts });
   } catch (error) {
-    res.status(500).json({ success: false, message: error });
+    res.status(500).json({
+      success: false,
+      message: "Fetching posts failed, please try again",
+    });
   }
 });
 
@@ -33,9 +35,10 @@ router.route("/").post(async (req, res) => {
     const newPost = await Post.create({
       name,
       prompt,
-      photo: photo_URL.url,
+      photo,
     });
-    res.status(201).json({ success: true, data: newPost });
+    console.log("sqbqjbdqba");
+    res.status(200).json({ success: true, data: newPost });
   } catch (error) {
     res.status(500).json({ success: false, message: error });
   }

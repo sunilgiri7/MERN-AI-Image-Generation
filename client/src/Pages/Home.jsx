@@ -1,47 +1,67 @@
 import React, { useEffect, useState } from "react";
 import { Card, FormFill, Loader } from "../components";
 
+const RenderCard = ({ data, title }) => {
+  if (!data) {
+    return null; // or any other fallback UI
+  }
+
+  if (data?.length > 0) {
+    return data.map((post) => <Card key={post._id} {...post} />);
+  }
+
+  return (
+    <h2 className="mt-5 font-bold text-[#6469ff] text-xl uppercase">{title}</h2>
+  );
+};
+
 const Home = () => {
   const [loading, setLoading] = useState(false);
   const [allPosts, setallPosts] = useState(null);
   const [searchText, setsearchText] = useState("");
+  const [SearchedResult, setSearchedResult] = useState(null);
+  const [searchTimeout, setsearchTimeout] = useState(null);
+
+  const fetchPosts = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch("http://localhost:8080/api/v1/post", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      if (response.ok) {
+        const result = await response.json();
+        setallPosts(result.data.reverse());
+      }
+      console.log("fetchPosts sucess");
+    } catch (error) {
+      alert(error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchPosts = async () => {
-      setLoading(true);
-      try {
-        const response = await fetch("http://localhost:8080/api/v1/post", {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-        if (response.ok) {
-          const result = await response.json();
-          setallPosts(result.data.reverse());
-        }
-      } catch (error) {
-        alert(error);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchPosts();
-  });
+  }, []);
 
-  const RenderCard = ({ data, title }) => {
-    if (!data) {
-      return null; // or any other fallback UI
-    }
-
-    if (data.length > 0) {
-      return data.map((post) => <Card key={post._id} {...post} />);
-    }
-
-    return (
-      <h2 className="mt-5 font-bold text-[#6469ff] text-xl uppercase">
-        {title}
-      </h2>
+  const handleSearch = (e) => {
+    clearTimeout(searchTimeout);
+    setsearchText(e.target.value);
+    setsearchTimeout(
+      setTimeout(() => {
+        const searchResult = allPosts.filter((item) =>
+          item.name
+            .toLowerCase()
+            .includes(
+              searchText.toLocaleLowerCase() ||
+                item.prompt.toLowerCase().includes(searchText.toLowerCase())
+            )
+        );
+        setSearchedResult(searchResult);
+      }, 500)
     );
   };
 
@@ -57,7 +77,14 @@ const Home = () => {
         </p>
       </div>
       <div className="mt-16">
-        <FormFill />
+        <FormFill
+          labelName="Search posts"
+          type="text"
+          name="text"
+          placeholder="Search Posts"
+          value={searchText}
+          handleChange={handleSearch}
+        />
       </div>
 
       <div className="mt-10">
@@ -75,9 +102,12 @@ const Home = () => {
             )}
             <div className="grid lg:grid-cols-4 sm:grid-cols-3 xs:grid-cols-2 grid-cols-1 gap-3">
               {searchText ? (
-                <RenderCard data={[]} title="No search results found!" />
+                <RenderCard
+                  data={SearchedResult}
+                  title="No search results found!"
+                />
               ) : (
-                <RenderCard data={[]} title="No posts found!" />
+                <RenderCard data={allPosts} title="No posts found!" />
               )}
             </div>
           </>

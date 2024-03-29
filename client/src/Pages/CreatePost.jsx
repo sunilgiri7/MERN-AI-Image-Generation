@@ -16,7 +16,6 @@ const CreatePost = () => {
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
-    // Handle form submission logic
     e.preventDefault();
     if (form.prompt && form.photo) {
       setLoading(true);
@@ -28,7 +27,8 @@ const CreatePost = () => {
           },
           body: JSON.stringify(form),
         });
-        await response.json();
+        const data = await response.json();
+        console.log("Server Response:", data);
         navigate("/");
       } catch (error) {
         alert(error);
@@ -69,8 +69,17 @@ const CreatePost = () => {
 
         // Assuming data is an array of image URLs
         if (data && data.length > 0) {
-          // Update the photo state with the first image URL
-          setForm({ ...form, photo: data[0] });
+          // Convert the first image URL to a base64 string
+          const imageResponse = await fetch(data[0]);
+          const imageBlob = await imageResponse.blob();
+          const base64Image = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.readAsDataURL(imageBlob);
+          });
+
+          // Update the photo state with the base64 image data
+          setForm({ ...form, photo: base64Image });
         } else {
           throw new Error("No image URLs returned from the backend");
         }
@@ -119,12 +128,14 @@ const CreatePost = () => {
               <img
                 src={form.photo} // Assuming the image data is in base64 format
                 alt={form.prompt}
+                name="photo"
                 className="w-full h-full object-contain"
               />
             ) : (
               <img
                 src={preview}
                 alt="preview"
+                name="photo"
                 className="w-9/12 h-9/12 object-contain opacity-40"
               />
             )}
